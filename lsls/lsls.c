@@ -6,7 +6,7 @@
 /**
  * Main
  */
-int handle_level(char *path, char **output, int rem_depth)
+int handle_level(char *root, char *path, char **output, int rem_depth)
 {
 
   // Open directory
@@ -27,7 +27,7 @@ int handle_level(char *path, char **output, int rem_depth)
     struct stat buf;
 
     char full_path[512];
-    snprintf(full_path, 512, "%s/%s", path, current->d_name);
+    snprintf(full_path, 512, "%s%s/%s", root, path, current->d_name);
     stat(full_path, &buf);
 
     char *line;
@@ -37,12 +37,28 @@ int handle_level(char *path, char **output, int rem_depth)
     {
       snprintf(line, 512, "%10s   %s\n", "<DIR>", current->d_name);
 
+      // careful, this is base case for recursion
       if (rem_depth != 0)
       {
-        lines++;
-        line = output[lines];
 
-        snprintf(line, 512, "I would go deeper here\n");
+        char *recur_output[100];
+        for (int i = 0; i < 100; i++)
+        {
+          recur_output[i] = malloc(512);
+        }
+
+        int recur_levels = handle_level(path, current->d_name, recur_output, rem_depth - 1);
+        for (int i = 0; i < recur_levels; i++)
+        {
+          lines++;
+          line = output[lines];
+          snprintf(line, 512, "%s%s", "          ", recur_output[i]);
+        }
+
+        for (int i = 0; i < 100; i++)
+        {
+          free(recur_output[i]);
+        }
       }
     }
     else
@@ -84,7 +100,7 @@ int main(int argc, char **argv)
     output[i] = malloc(512);
   }
 
-  int levels = handle_level(target, output, 1);
+  int levels = handle_level("", target, output, 1);
   for (int i = 0; i < levels; i++)
   {
     printf("%s", output[i]);
