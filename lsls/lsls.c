@@ -19,8 +19,6 @@ void handle_level(char *path, int rem_depth, int current_depth)
   }
 
   // Repeatedly read and print entries
-  // lines keeps track of number of lines added to output, and gets returned
-  int lines = 0;
   struct dirent *current = readdir(dir);
   while (current)
   {
@@ -30,6 +28,7 @@ void handle_level(char *path, int rem_depth, int current_depth)
     snprintf(full_path, 512, "%s/%s", path, current->d_name);
     stat(full_path, &buf);
 
+    // pad left whitespace for current depth
     for (int i = 0; i < current_depth; i++)
     {
       printf("          ");
@@ -39,17 +38,32 @@ void handle_level(char *path, int rem_depth, int current_depth)
     {
       printf("%10s   %s\n", "<DIR>", current->d_name);
 
-      // careful, this is base case for recursion
+      // careful, this is base case and initialization for recursion
       if (rem_depth != 0)
       {
+        // pad left whitespace for current depth
+        for (int i = 0; i < current_depth; i++)
+        {
+          printf("          ");
+        }
+        printf("           ---->\n");
+
+        // recur
         handle_level(full_path, rem_depth - 1, current_depth + 1);
+
+        // pad left whitespace for current depth
+        for (int i = 0; i < current_depth; i++)
+        {
+          printf("          ");
+        }
+        printf("           <----\n");
       }
     }
     else
     {
       printf("%10ld   %s\n", buf.st_size, current->d_name);
     }
-    lines++;
+
     current = readdir(dir);
   }
 
@@ -59,12 +73,13 @@ void handle_level(char *path, int rem_depth, int current_depth)
 int main(int argc, char **argv)
 {
   // Parse command line
-  // check if more than two arguments, if so error
+  // check if more than three arguments, if so error
   if (argc > 3)
   {
     perror("The signature for the command is lsls [-path] [-depth]");
     exit(1);
   }
+  // set hiearchy depth from third argument if it exists, else 1
   int depth;
   if (argc == 3)
   {
