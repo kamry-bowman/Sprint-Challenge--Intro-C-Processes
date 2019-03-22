@@ -12,7 +12,7 @@ int main(int argc, char **argv)
   // check if more than two arguments, if so error
   if (argc > 2)
   {
-    perror("The signature for the command is lsls [,path]");
+    perror("The signature for the command is lsls [-path]");
     exit(1);
   }
   char *target;
@@ -45,8 +45,15 @@ int main(int argc, char **argv)
     char full_path[512];
     snprintf(full_path, 512, "%s/%s", target, current->d_name);
     stat(full_path, &buf);
+    if ((buf.st_mode & S_IFMT) == S_IFDIR)
+    {
+      printf("%10s   %s\n", "<DIR>", current->d_name);
+    }
+    else
+    {
 
-    printf("%10ld   %s\n", buf.st_size, current->d_name);
+      printf("%10ld   %s\n", buf.st_size, current->d_name);
+    }
     current = readdir(dir);
   }
 
