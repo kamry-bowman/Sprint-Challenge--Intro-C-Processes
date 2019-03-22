@@ -6,7 +6,7 @@
 /**
  * Main
  */
-int handle_level(char *path, char **output, int rem_depth)
+void handle_level(char *path, int rem_depth, int current_depth)
 {
 
   // Open directory
@@ -30,57 +30,49 @@ int handle_level(char *path, char **output, int rem_depth)
     snprintf(full_path, 512, "%s/%s", path, current->d_name);
     stat(full_path, &buf);
 
-    char *line;
-    line = output[lines];
+    for (int i = 0; i < current_depth; i++)
+    {
+      printf("          ");
+    }
 
     if ((buf.st_mode & S_IFMT) == S_IFDIR)
     {
-      snprintf(line, 512, "%10s   %s\n", "<DIR>", current->d_name);
+      printf("%10s   %s\n", "<DIR>", current->d_name);
 
       // careful, this is base case for recursion
       if (rem_depth != 0)
       {
-
-        char *recur_output[100];
-        for (int i = 0; i < 100; i++)
-        {
-          recur_output[i] = malloc(512);
-        }
-
-        int recur_levels = handle_level(full_path, recur_output, rem_depth - 1);
-        for (int i = 0; i < recur_levels; i++)
-        {
-          lines++;
-          line = output[lines];
-          snprintf(line, 512, "%s%s", "          ", recur_output[i]);
-        }
-
-        for (int i = 0; i < 100; i++)
-        {
-          free(recur_output[i]);
-        }
+        handle_level(full_path, rem_depth - 1, current_depth + 1);
       }
     }
     else
     {
-      snprintf(line, 512, "%10ld   %s\n", buf.st_size, current->d_name);
+      printf("%10ld   %s\n", buf.st_size, current->d_name);
     }
     lines++;
     current = readdir(dir);
   }
 
   closedir(dir);
-  return lines;
 }
 
 int main(int argc, char **argv)
 {
   // Parse command line
   // check if more than two arguments, if so error
-  if (argc > 2)
+  if (argc > 3)
   {
-    perror("The signature for the command is lsls [-path]");
+    perror("The signature for the command is lsls [-path] [-depth]");
     exit(1);
+  }
+  int depth;
+  if (argc == 3)
+  {
+    depth = atoi(argv[2]);
+  }
+  else
+  {
+    depth = 1;
   }
   char *target;
   // set target to second argument if it exists
@@ -94,23 +86,7 @@ int main(int argc, char **argv)
     target = ".";
   }
 
-  char *output[100];
-  for (int i = 0; i < 100; i++)
-  {
-    output[i] = malloc(512);
-  }
-
-  int levels = handle_level(target, output, 1);
-  for (int i = 0; i < levels; i++)
-  {
-    printf("%s", output[i]);
-  }
-  printf("\n");
-
-  for (int i = 0; i < 100; i++)
-  {
-    free(output[i]);
-  }
+  handle_level(target, depth, 0);
 
   return 0;
 }
