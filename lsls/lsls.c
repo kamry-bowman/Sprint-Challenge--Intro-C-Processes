@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <dirent.h>
 
 /**
@@ -39,7 +40,13 @@ int main(int argc, char **argv)
   struct dirent *current = readdir(dir);
   while (current)
   {
-    printf("%s\n", current->d_name);
+    struct stat buf;
+
+    char full_path[512];
+    snprintf(full_path, 512, "%s/%s", target, current->d_name);
+    stat(full_path, &buf);
+
+    printf("%10ld   %s\n", buf.st_size, current->d_name);
     current = readdir(dir);
   }
 
