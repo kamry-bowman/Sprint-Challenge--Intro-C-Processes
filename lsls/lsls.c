@@ -6,6 +6,57 @@
 /**
  * Main
  */
+int handle_level(char *path, char **output, int rem_depth)
+{
+
+  // Open directory
+  DIR *dir;
+  dir = opendir(path);
+  if (!dir)
+  {
+    perror("Failed to open directory");
+    exit(1);
+  }
+
+  // Repeatedly read and print entries
+  // lines keeps track of number of lines added to output, and gets returned
+  int lines = 0;
+  struct dirent *current = readdir(dir);
+  while (current)
+  {
+    struct stat buf;
+
+    char full_path[512];
+    snprintf(full_path, 512, "%s/%s", path, current->d_name);
+    stat(full_path, &buf);
+
+    char *line;
+    line = output[lines];
+
+    if ((buf.st_mode & S_IFMT) == S_IFDIR)
+    {
+      snprintf(line, 512, "%10s   %s\n", "<DIR>", current->d_name);
+
+      if (rem_depth != 0)
+      {
+        lines++;
+        line = output[lines];
+
+        snprintf(line, 512, "I would go deeper here\n");
+      }
+    }
+    else
+    {
+      snprintf(line, 512, "%10ld   %s\n", buf.st_size, current->d_name);
+    }
+    lines++;
+    current = readdir(dir);
+  }
+
+  closedir(dir);
+  return lines;
+}
+
 int main(int argc, char **argv)
 {
   // Parse command line
@@ -27,37 +78,23 @@ int main(int argc, char **argv)
     target = ".";
   }
 
-  // Open directory
-  DIR *dir;
-  dir = opendir(target);
-  if (!dir)
+  char *output[100];
+  for (int i = 0; i < 100; i++)
   {
-    perror("Failed to open directory");
-    exit(1);
+    output[i] = malloc(512);
   }
 
-  // Repeatly read and print entries
-  struct dirent *current = readdir(dir);
-  while (current)
+  int levels = handle_level(target, output, 1);
+  for (int i = 0; i < levels; i++)
   {
-    struct stat buf;
-
-    char full_path[512];
-    snprintf(full_path, 512, "%s/%s", target, current->d_name);
-    stat(full_path, &buf);
-    if ((buf.st_mode & S_IFMT) == S_IFDIR)
-    {
-      printf("%10s   %s\n", "<DIR>", current->d_name);
-    }
-    else
-    {
-
-      printf("%10ld   %s\n", buf.st_size, current->d_name);
-    }
-    current = readdir(dir);
+    printf("%s", output[i]);
   }
+  printf("\n");
 
-  closedir(dir);
+  for (int i = 0; i < 100; i++)
+  {
+    free(output[i]);
+  }
 
   return 0;
 }
