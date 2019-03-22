@@ -6,7 +6,7 @@
 /**
  * Main
  */
-int handle_level(char *root, char *path, char **output, int rem_depth)
+int handle_level(char *path, char **output, int rem_depth)
 {
 
   // Open directory
@@ -27,7 +27,7 @@ int handle_level(char *root, char *path, char **output, int rem_depth)
     struct stat buf;
 
     char full_path[512];
-    snprintf(full_path, 512, "%s%s/%s", root, path, current->d_name);
+    snprintf(full_path, 512, "%s/%s", path, current->d_name);
     stat(full_path, &buf);
 
     char *line;
@@ -47,7 +47,7 @@ int handle_level(char *root, char *path, char **output, int rem_depth)
           recur_output[i] = malloc(512);
         }
 
-        int recur_levels = handle_level(path, current->d_name, recur_output, rem_depth - 1);
+        int recur_levels = handle_level(full_path, recur_output, rem_depth - 1);
         for (int i = 0; i < recur_levels; i++)
         {
           lines++;
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
     output[i] = malloc(512);
   }
 
-  int levels = handle_level("", target, output, 1);
+  int levels = handle_level(target, output, 1);
   for (int i = 0; i < levels; i++)
   {
     printf("%s", output[i]);
